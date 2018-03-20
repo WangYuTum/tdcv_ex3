@@ -225,7 +225,13 @@ class model_data():
 
         return self._dbset
 
-    def next_batch(self, global_step):
+    def next_batch(self):
+        '''
+        :return: a batch [3*batch, 64, 64, 3].
+                 [0:N, 64, 64, 3] are anchor images
+                 [N:2*N, 64, 64, 3] are positives(pullers)
+                 [2*N:3*N, 64, 64, 3] are negatives(pushers)
+        '''
 
         anchor_idx = [] # each element is a tuple: (category_id, img_id)
         for batch_id in range(self._batch):
@@ -263,7 +269,12 @@ class model_data():
                 category_id = anchor_idx[batch_id][0]
                 image = self._get_pusher(category_id, 'diff', 0)
                 batch_data = np.concatenate((batch_data, image), 0) # [3*batch, 64, 64, 3] anchors and positives
-        return
+
+        # check shape
+        batch_shape = batch_data.shape
+        if batch_data[0] != self._batch*3:
+            sys.exit("Batch data shape 0 invalid: {}, should be {}".format(batch_shape[0], self._batch*3))
+        return batch_data
 
     def _get_pusher(self, category_id, mode, img_id):
         '''
