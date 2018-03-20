@@ -259,6 +259,17 @@ class model_data():
         :return: the puller of the corresponding anchor image
         '''
 
+        pose_anchor = self._trainset[category_id][img_id][1] # np.float32, shape (4,)
+        num_imgs = len(self._trainset[category_id])
+        metric_list = [] # [(metric, img_id), (metric, img_id), ...]
+        for i in range(num_imgs):
+            if i == img_id:
+                continue
+            else:
+                pose_other = self._trainset[category_id][i][1]
+                metric_list.append((self._compute_metric(pose_anchor, pose_other),i))
+        # TODO: check the meaning of metric
+        sorted(metric_list, reverse=True)
 
 
         return image
@@ -266,11 +277,12 @@ class model_data():
     # TODO
     def _compute_metric(self, pose1, pose2):
         '''
-        :param pose1: parameterized by ...
-        :param pose2: parameterized by ...
+        :param pose1: parameterized by quaternions
+        :param pose2: parameterized by quaternions
         :return: np.float32
         '''
 
+        metric_v = np.arccos(np.absolute(np.dot(pose1, pose2)))
 
         return metric_v
 
