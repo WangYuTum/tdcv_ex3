@@ -233,25 +233,71 @@ class model_data():
             num_imgs = len(self._trainset[category_id])
             img_id = randint(0, num_imgs-1)
             anchor_idx.append((category_id, img_id))
-        # get anchor data
+        # get anchor data, from train set
         batch_data = self._trainset[anchor_idx[0][0]][anchor_idx[0][1]][0] # np.float32, [64,64,3]
         batch_data = np.expand_dims(batch_data, 0) # [1,64,64,3]
         for batch_id in range(self._batch-1):
             id = batch_id + 1
             img_data = self._trainset[anchor_idx[id][0]][anchor_idx[id][1]][0]
             img_data = np.expand_dims(img_data, 0)
-            batch_data = np.concatenate((batch_data, img_data), 0) # [batch,64,64,3] only for anchors
-        # get positive data
+            batch_data = np.concatenate((batch_data, img_data), 0) # [batch, 64, 64, 3] only for anchors
+        # get positive data, from db set
         for batch_id in range(self._batch):
             category_id = anchor_idx[batch_id][0]
             img_id = anchor_idx[batch_id][1]
             image = self._get_puller(category_id, img_id)
-        # get negative data, TODO
-
-
+            image = np.expand_dims(image, 0)
+            batch_data = np.concatenate((batch_data, image), 0) # [2*batch, 64, 64, 3] anchors and positives
+        # get negative data, from db set
+        for batch_id in range(self._batch):
+            # choose same obj or not
+            obj_bool = randint(0,1)
+            if obj_bool == 0:
+                # choose the same obj, diff pose
+                category_id = anchor_idx[batch_id][0]
+                img_id = anchor_idx[batch_id][1]
+                image = self._get_pusher(category_id, 'same', img_id)
+                batch_data = np.concatenate((batch_data, image), 0) # [3*batch, 64, 64, 3] anchors and positives
+            else:
+                # choose diff obj
+                category_id = anchor_idx[batch_id][0]
+                image = self._get_pusher(category_id, 'diff', 0)
+                batch_data = np.concatenate((batch_data, image), 0) # [3*batch, 64, 64, 3] anchors and positives
         return
 
-    # TODO
+    def _get_pusher(self, category_id, mode, img_id):
+        '''
+        :param category_id: the category id of anchor
+        :param mode: either 'same' or 'diff'
+        :param img_id: only useful when mode is 'same'
+        :return: the pusher of the anchor
+        '''
+        if mode == 'diff':
+            # choose random image from dbset with a diff obj id
+            rand_cat = randint(0,4)
+            while rand_cat == category_id:
+                rand_cat = randint(0, 4)
+            num_imgs = len(self._dbset[rand_cat])
+            rand_img = randint(0, num_imgs-1)
+            image = self._dbset[rand_cat][rand_img][0] # np.float32, [64,64,3]
+
+            return image
+        else:
+            # choose random image from dbset of the same obj id, but diff pose
+            pose_anchor = self._trainset[category_id][img_id][1] # np.float32, shape (4,)
+            num_imgs = len(self._dbset[category_id])
+            metric_list = [] # [(metric, img_id), (metric, img_id), ...]
+            for i in range(num_imgs):
+                pose_other = self._dbset[category_id][i][1]
+                metric_list.append((self._compute_metric(pose_anchor, pose_other), i))
+            # TODO: check the meaning of metric
+            sorted(metric_list, reverse=False)
+            pusher_rand = randint(1, num_imgs-1) # a diff pose as long as not the most similar one
+            pusher_id = metric_list[pusher_rand][1]
+            image = self._dbset[category_id][pusher_id][0] # np.float32, [64,64,3]
+
+            return image
+
     def _get_puller(self, category_id, img_id):
         '''
         :param category_id: the category id of anchor
@@ -260,21 +306,18 @@ class model_data():
         '''
 
         pose_anchor = self._trainset[category_id][img_id][1] # np.float32, shape (4,)
-        num_imgs = len(self._trainset[category_id])
+        num_imgs = len(self._dbset[category_id])
         metric_list = [] # [(metric, img_id), (metric, img_id), ...]
         for i in range(num_imgs):
-            if i == img_id:
-                continue
-            else:
-                pose_other = self._trainset[category_id][i][1]
-                metric_list.append((self._compute_metric(pose_anchor, pose_other),i))
+            pose_other = self._dbset[category_id][i][1]
+            metric_list.append((self._compute_metric(pose_anchor, pose_other),i))
         # TODO: check the meaning of metric
-        sorted(metric_list, reverse=True)
-
+        sorted(metric_list, reverse=False)
+        puller_id = metric_list[0][1]
+        image = self._dbset[category_id][puller_id][0] # np.float32, [64,64,3]
 
         return image
 
-    # TODO
     def _compute_metric(self, pose1, pose2):
         '''
         :param pose1: parameterized by quaternions
