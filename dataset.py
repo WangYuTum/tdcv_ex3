@@ -99,6 +99,8 @@ class model_data():
             poses = self._get_poses('real', category)  # list of numpy arrays
             list_ids = self._get_testlist(len(files_img))  # a list of testing ids
             for test_id in list_ids:
+                if test_id > 1177:  # tricky one because of dirty data
+                    break
                 img = self._read_img(files_img[test_id])
                 pose = poses[test_id]
                 testset[i].append((img, pose))
@@ -180,7 +182,7 @@ class model_data():
                         pose_v.append(float(pose_raw[j]))
                     poses.append(np.array(pose_v, np.float32))
             if len(poses) != num_raw / 2:
-                sys.exit("Error reading poses. Got {} raw lines, {} numeric poses".format(num_raw, len(poses)))
+                sys.exit("Error reading poses. Got {0} raw lines, {1} numeric poses, {2}, {3}".format(num_raw, len(poses), subset, category))
 
         return poses
 
@@ -190,7 +192,7 @@ class model_data():
         list_ids = []
         with open(list_txt) as t:
             raw = t.read().splitlines()
-            raw_list = raw.split(', ')
+            raw_list = raw[0].split(', ')
             len_list = len(raw_list)
             for i in range(len_list):
                 list_ids.append(int(raw_list[i]))
@@ -263,17 +265,20 @@ class model_data():
                 category_id = anchor_idx[batch_id][0]
                 img_id = anchor_idx[batch_id][1]
                 image = self._get_pusher(category_id, 'same', img_id)
+                image = np.expand_dims(image, 0)
                 batch_data = np.concatenate((batch_data, image), 0) # [3*batch, 64, 64, 3] anchors and positives
             else:
                 # choose diff obj
                 category_id = anchor_idx[batch_id][0]
                 image = self._get_pusher(category_id, 'diff', 0)
+                image = np.expand_dims(image, 0)
                 batch_data = np.concatenate((batch_data, image), 0) # [3*batch, 64, 64, 3] anchors and positives
 
         # check shape
         batch_shape = batch_data.shape
-        if batch_data[0] != self._batch*3:
+        if batch_shape[0] != self._batch*3:
             sys.exit("Batch data shape 0 invalid: {}, should be {}".format(batch_shape[0], self._batch*3))
+
         return batch_data
 
     def _get_pusher(self, category_id, mode, img_id):
@@ -301,8 +306,8 @@ class model_data():
             for i in range(num_imgs):
                 pose_other = self._dbset[category_id][i][1]
                 metric_list.append((self._compute_metric(pose_anchor, pose_other), i))
-            # TODO: check the meaning of metric
-            sorted(metric_list, reverse=False)
+            # the smaller the metric, the more similar
+            metric_list = sorted(metric_list, reverse=False)
             pusher_rand = randint(1, num_imgs-1) # a diff pose as long as not the most similar one
             pusher_id = metric_list[pusher_rand][1]
             image = self._dbset[category_id][pusher_id][0] # np.float32, [64,64,3]
@@ -322,8 +327,8 @@ class model_data():
         for i in range(num_imgs):
             pose_other = self._dbset[category_id][i][1]
             metric_list.append((self._compute_metric(pose_anchor, pose_other),i))
-        # TODO: check the meaning of metric
-        sorted(metric_list, reverse=False)
+        # the smaller the metric, the more similar
+        metric_list = sorted(metric_list, reverse=False)
         puller_id = metric_list[0][1]
         image = self._dbset[category_id][puller_id][0] # np.float32, [64,64,3]
 
@@ -336,7 +341,7 @@ class model_data():
         :return: np.float32
         '''
 
-        metric_v = np.arccos(np.absolute(np.dot(pose1, pose2)))
+        metric_v = 2 * np.arccos(np.absolute(np.dot(pose1, pose2)))
 
         return metric_v
 
