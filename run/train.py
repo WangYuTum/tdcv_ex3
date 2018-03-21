@@ -26,8 +26,9 @@ with tf.device('/cpu:0'):
     my_dataset = model_data(params_data)
     # DEBUG
     trainset = my_dataset.get_trainset()
-    print(trainset[0][0][1])
-    print(trainset[1][0][1])
+    print("img: {}, pose: {}".format(trainset[0][5][2], trainset[0][5][1]))
+    print("img: {}, pose: {}".format(trainset[0][10][2], trainset[0][10][1]))
+    print("img: {}, pose: {}".format(trainset[0][25][2], trainset[0][25][1]))
 
 # config train params
 params_model = {
