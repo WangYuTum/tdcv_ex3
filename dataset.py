@@ -320,7 +320,8 @@ class model_data():
         :param img_id: the img id of anchor
         :return: the puller of the corresponding anchor image
         '''
-
+        #DEBUG
+        print("Get img_id of anchor: {}".format(img_id))
         pose_anchor = self._trainset[category_id][img_id][1] # np.float32, shape (4,)
         num_imgs = len(self._dbset[category_id])
         metric_list = [] # [(metric, img_id), (metric, img_id), ...]
@@ -330,6 +331,9 @@ class model_data():
         # the smaller the metric, the more similar
         metric_list = sorted(metric_list, reverse=False)
         puller_id = metric_list[0][1]
+        # DEBUG
+        print("the puller angle: {}".format(metric_list[0][0]))
+        print("the other angle: {}".format(metric_list[10][0]))
         image = self._dbset[category_id][puller_id][0] # np.float32, [64,64,3]
 
         return image
