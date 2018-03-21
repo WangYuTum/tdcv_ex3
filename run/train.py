@@ -82,7 +82,7 @@ with tf.Session(config=config_gpu) as sess:
     # print('restored variables from {}'.format(params_model['restore_model']))
     print("All weights initialized.")
 
-    for i in range(3):
+    for i in range(5):
         next_batch = my_dataset.next_batch()
         print('step: {0}, feed shape: {1}'.format(i, next_batch.shape))
         feed_dict_v = {feed_triplets: next_batch}
