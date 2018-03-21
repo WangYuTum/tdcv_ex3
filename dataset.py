@@ -137,7 +137,9 @@ class model_data():
         # remove prefix
         num_imgs = len(files_img)
         for i in range(num_imgs):
-            files_img[i] = files_img[i].replace(subset, '')
+            old_name = files_img[i].split('/')[-1]
+            new_name = old_name.replace(subset, '')
+            files_img[i] = files_img[i].replace(old_name, new_name)
         files_img.sort()
 
         return files_img
