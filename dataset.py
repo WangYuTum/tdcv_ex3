@@ -72,7 +72,7 @@ class model_data():
             poses = self._get_poses('fine', category)  # list of numpy arrays
             num_imgs = len(files_img)
             for j in range(num_imgs):
-                img = self._read_img(files_img[j]) # numpy array [64,64,3], np.float32
+                img = self._read_img(files_img[j], 'fine') # numpy array [64,64,3], np.float32
                 pose = poses[j] # numpy array [4,], np.float32
                 trainset[i].append((img, pose))
             # real set
@@ -80,7 +80,7 @@ class model_data():
             files_img = self._get_img_filelist('real', category)
             poses = self._get_poses('real', category)  # list of numpy arrays
             for train_id in list_ids:
-                img = self._read_img(files_img[train_id])  # numpy array [64,64,3], np.float32
+                img = self._read_img(files_img[train_id], 'real')  # numpy array [64,64,3], np.float32
                 pose = poses[train_id]  # numpy array [4,], np.float32
                 trainset[i].append((img, pose))
 
@@ -101,7 +101,7 @@ class model_data():
             for test_id in list_ids:
                 if test_id > 1177:  # tricky one because of dirty data
                     break
-                img = self._read_img(files_img[test_id])
+                img = self._read_img(files_img[test_id], 'real')
                 pose = poses[test_id]
                 testset[i].append((img, pose))
 
@@ -120,7 +120,7 @@ class model_data():
             poses = self._get_poses('coarse', category)  # list of numpy arrays
             num_imgs= len(files_img)
             for j in range(num_imgs):
-                img = self._read_img(files_img[j])
+                img = self._read_img(files_img[j], 'coarse')
                 pose = poses[j]
                 dbset[i].append((img, pose))
 
@@ -142,11 +142,14 @@ class model_data():
 
         return files_img
 
-    def _read_img(self, img_path):
+    def _read_img(self, img_path, prefix):
         '''
         :param img_path: e.g. /path_to_img/1.png
         :return: numpy array [64,64,3], np.float32, standardized
         '''
+        num_s = img_path.split('/')[-1].split('.')[0]
+        new_name = prefix + num_s
+        img_path = img_path.replace(num_s, new_name)
         img = Image.open(img_path)
         img_arr = np.array(img, dtype=np.float32)
 
