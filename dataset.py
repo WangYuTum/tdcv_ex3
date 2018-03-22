@@ -135,15 +135,20 @@ class model_data():
         '''
         imgs_path = os.path.join(self._root_dir, subset, category, '*.png')
         files_img = glob.glob(imgs_path)
+        sort_list = []
         # remove prefix
         num_imgs = len(files_img)
         for i in range(num_imgs):
             old_name = files_img[i].split('/')[-1]
             new_name = old_name.replace(subset, '')
             files_img[i] = files_img[i].replace(old_name, new_name)
-        files_img.sort()
+            sort_list.append((int(new_name.replace('.png','')), files_img[i]))
+        sort_list.sort()
+        files = []
+        for i in range(num_imgs):
+            files.append(sort_list[i][1])
 
-        return files_img
+        return files
 
     def _read_img(self, img_path, prefix):
         '''
