@@ -17,7 +17,7 @@ config_gpu.gpu_options.per_process_gpu_memory_fraction = 0.5
 # config dataset params (3 datasets with different scales)
 params_data = {
     'mode': 'train',
-    'batch': 1,
+    'batch': 3,
     'root_dir': '../../dataset'
 }
 
@@ -29,7 +29,7 @@ with tf.device('/cpu:0'):
 
 # config train params
 params_model = {
-    'batch': 1,
+    'batch': 3,
     'l2_weight': 0.0002,
     'init_lr': 1e-3, # original paper:
     'margin': 0.01, # default static margin
@@ -80,7 +80,7 @@ with tf.Session(config=config_gpu) as sess:
     # print('restored variables from {}'.format(params_model['restore_model']))
     print("All weights initialized.")
 
-    for i in range(5):
+    for i in range(3):
         next_batch = my_dataset.next_batch()
         print('step: {0}, feed shape: {1}'.format(i, next_batch.shape))
         feed_dict_v = {feed_triplets: next_batch}
