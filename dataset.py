@@ -75,6 +75,7 @@ class model_data():
                 img = self._read_img(files_img[j], 'fine') # numpy array [64,64,3], np.float32
                 pose = poses[j] # numpy array [4,], np.float32
                 trainset[i].append((img, pose, files_img[j]))
+                print('img: {}, pose: {}'.format(files_img[j], pose))
             # real set
             list_ids = self._get_trainlist() # a list of training ids
             files_img = self._get_img_filelist('real', category)
